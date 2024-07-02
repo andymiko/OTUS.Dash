@@ -7,7 +7,7 @@ import geopandas as gpd
 from graphfunc import print_bar_by_sales, print_histo_rentable
 
 # ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ И ЗАГРУЗКА ДАННЫХ
-app = Dash(__name__)
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 df = pd.read_csv('data_for_otus.csv')
 
@@ -55,15 +55,46 @@ accept_button = dbc.Button('Выполнить',id='accept_button',n_clicks=0,cl
 
 # ВЁРСТКА
 app.title = 'OTUS DASH'
-app.layout = html.Div([
-    html.H1("HELLO WORLD!"),
-    html.Div(sales_channel),
-    html.Div(rentable_slider),
-    html.Div(date_range),
-    html.Div(accept_button),
-    dcc.Graph(id='product_bar'),
-    dcc.Graph(id='histogram')
-])
+app.layout = dbc.Container(
+    html.Div([
+    #     HEADER
+        html.Div(
+            dbc.Row([
+                dbc.Col(html.Img(
+                    src=app.get_asset_url("images/logo_black.png"),
+                    style={'width':'200px','margin-top':'10px','margin-bottom':'10px'}),
+                style={'width':'200px'}),
+                dbc.Col(html.Div(html.H1('BI-dashboard on Dash')))]),className='app-header'
+        ),
+    # BODY
+        html.Div([
+            html.Div(sales_channel),
+            html.Div(rentable_slider),
+            html.Div(date_range),
+            html.Div(accept_button),
+
+            dcc.Graph(id='product_bar'),
+            dcc.Graph(id='histogram')
+        ]),
+    # FOOTER
+        html.Div(
+            dbc.Row([
+                dbc.Col(html.Img(src=app.get_asset_url("images/logo-small_black.png"),style={'width':'200px'})),
+                dbc.Col(html.Div(html.H3('OTUS. Курс «BI-аналитика»')),align='center'),
+                dbc.Col(html.P("Колесник Андрей, 2024 г.")),
+        ],align='center'),
+        className='app-footer')
+    ])
+)
+# app.layout = html.Div([
+#     html.H1("HELLO WORLD!"),
+#     html.Div(sales_channel),
+#     html.Div(rentable_slider),
+#     html.Div(date_range),
+#     html.Div(accept_button),
+#     dcc.Graph(id='product_bar'),
+#     dcc.Graph(id='histogram')
+# ])
 
 # CALLBACK'S (ФУНКЦИИ ОБРАТНОГО ВЫЗОВА)
 
