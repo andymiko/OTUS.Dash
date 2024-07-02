@@ -1,7 +1,7 @@
 # ИМПОРТЫ
 
 import pandas as pd
-from dash import Dash, html, dcc
+from dash import Dash, html, dcc, Input, Output, State
 import dash_bootstrap_components as dbc
 import geopandas as gpd
 from graphfunc import print_bar_by_sales
@@ -58,10 +58,34 @@ app.layout = html.Div([
     html.Div(sales_channel),
     html.Div(rentable_slider),
     html.Div(date_range),
-    dcc.Graph(figure=print_bar_by_sales(dataFrame=df))
+    dcc.Graph(id='product_bar')
 ])
 
 # CALLBACK'S (ФУНКЦИИ ОБРАТНОГО ВЫЗОВА)
+
+@app.callback(
+    Output(component_id='product_bar',component_property='figure'),
+    Input(component_id='sales_channel',component_property='value'),
+    Input(component_id='data_filter',component_property='start_date'),
+    Input(component_id='data_filter',component_property='end_date'),
+    Input(component_id='rent_slider',component_property='value')
+)
+def sales_channel_filter(value_sales_channel, start_date, end_date, range_value):
+
+    if bool(value_sales_channel):
+        f_data = df.copy(deep=True)
+        f_data = f_data[f_data['Channel'].isin(value_sales_channel)]
+    else:
+        f_data = df.copy(deep=True)
+
+    f_data = f_data[(f_data['rentabel'] >= range_value[0]) & (f_data['rentabel'] <= range_value[-1])]
+
+    start_date = pd.to_datetime(start_date)
+    end_date = pd.to_datetime(end_date)
+
+    f_data = f_data[(f_data['OrderDate'] >= start_date) & (f_data['OrderDate'] <= end_date)]
+
+    return print_bar_by_sales(f_data)
 
 # ЗАПУСК ПРИЛОЖЕНИЯ
 
