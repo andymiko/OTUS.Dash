@@ -12,3 +12,13 @@ def print_histo_rentable(dataFrame):
     fig = px.histogram(filtred_data, x="rentabel", color="Category", marginal="box")
     fig.update_layout(xaxis_title="Рентабельность", yaxis_title="Кол-во")
     return fig
+
+def print_bar_by_district_subdistrict(dataFrame,type_layout:str):
+    if type_layout == 'district':
+        fig = px.histogram(dataFrame, x='District', y='Line Total')
+        fig.update_layout(xaxis_title="Округ", yaxis_title="RUB")
+        return fig
+    if type_layout == 'subdistrict':
+        fig = px.histogram(dataFrame, x='SubDistrict', y='Line Total')
+        fig.update_layout(xaxis_title="Район", yaxis_title="RUB")
+        return fig

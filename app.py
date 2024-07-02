@@ -1,13 +1,17 @@
 # ИМПОРТЫ
 
 import pandas as pd
-from dash import Dash, html, dcc, Input, Output, State
+from dash import Dash, html, dcc, Input, Output, State, ctx
 import dash_bootstrap_components as dbc
 import geopandas as gpd
-from graphfunc import print_bar_by_sales, print_histo_rentable
+from graphfunc import print_bar_by_sales, print_histo_rentable, print_bar_by_district_subdistrict
 
 # ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ И ЗАГРУЗКА ДАННЫХ
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = Dash(__name__, external_stylesheets=[
+    dbc.themes.BOOTSTRAP,
+    'assets/css/project.css',
+    'assets/css/typography.css'
+])
 
 df = pd.read_csv('data_for_otus.csv')
 
@@ -22,6 +26,9 @@ rent_min = df['rentabel'].min()
 
 # Канал продаж
 sales_options = [{'value':col,'label':col} for col in df['Channel'].unique().tolist()]
+
+# Округа
+district_options = [{'value':col,'label':col} for col in df['District'].unique().tolist()]
 
 # ЭЛЕМЕНТЫ
 
@@ -53,6 +60,15 @@ date_range = dcc.DatePickerRange(
 
 accept_button = dbc.Button('Выполнить',id='accept_button',n_clicks=0,className='me-1',color='warning')
 
+district_dropdown = dcc.Dropdown(
+    id='district_dropdown',
+    options=district_options,
+    value=[],
+    clearable=True,
+    placeholder='Весь город',
+    multi=False
+)
+
 # ВЁРСТКА
 app.title = 'OTUS DASH'
 app.layout = dbc.Container(
@@ -74,7 +90,10 @@ app.layout = dbc.Container(
             html.Div(accept_button),
 
             dcc.Graph(id='product_bar'),
-            dcc.Graph(id='histogram')
+            dcc.Graph(id='histogram'),
+
+            html.Div(district_dropdown),
+            dbc.Row(html.Div(id='change_graph')),
         ]),
     # FOOTER
         html.Div(
@@ -86,15 +105,6 @@ app.layout = dbc.Container(
         className='app-footer')
     ])
 )
-# app.layout = html.Div([
-#     html.H1("HELLO WORLD!"),
-#     html.Div(sales_channel),
-#     html.Div(rentable_slider),
-#     html.Div(date_range),
-#     html.Div(accept_button),
-#     dcc.Graph(id='product_bar'),
-#     dcc.Graph(id='histogram')
-# ])
 
 # CALLBACK'S (ФУНКЦИИ ОБРАТНОГО ВЫЗОВА)
 
@@ -131,6 +141,23 @@ def one_filter_renta(range_value):
     f_data = df.copy(deep=True)
     f_data = f_data[(f_data['rentabel'] >= range_value[0]) & (f_data['rentabel'] <= range_value[-1])]
     return print_histo_rentable(f_data)
+
+@app.callback(
+    Output(component_id='change_graph',component_property='children'),
+    Input(component_id='district_dropdown',component_property='value')
+)
+def sales_bar_by_district(value):
+    f_data = df.copy(deep=True)
+
+    if ctx.triggered[0]['value'] is None:
+        return html.Div([
+            html.H4('Сумма продаж по округам'),
+            dcc.Graph(figure=print_bar_by_district_subdistrict(f_data, type_layout='district'))])
+    else:
+        f_data = f_data[f_data['District'].isin([value])].reset_index(drop=True)
+        return html.Div([
+            html.H4('Сумма продаж по районам'),
+            dcc.Graph(figure=print_bar_by_district_subdistrict(f_data, type_layout='subdistrict'))])
 
 # ЗАПУСК ПРИЛОЖЕНИЯ
 
