@@ -8,11 +8,13 @@ from graphfunc import print_bar_by_sales, print_histo_rentable, print_bar_by_dis
     print_treemap_sales_district_subdistric, print_box_price_for_one, print_pie_category
 
 # ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ И ЗАГРУЗКА ДАННЫХ
-app = Dash(__name__, external_stylesheets=[
-    dbc.themes.BOOTSTRAP,
-    'assets/css/project.css',
-    'assets/css/typography.css'
-])
+app = Dash(__name__,
+           external_stylesheets=[
+               dbc.themes.BOOTSTRAP,
+               'assets/css/project.css',
+               'assets/css/typography.css'],
+           suppress_callback_exceptions=True
+           )
 
 df = pd.read_csv('data_for_otus.csv')
 
@@ -81,6 +83,64 @@ district_school_dropdown = dcc.Dropdown(
 
 # ВЁРСТКА
 app.title = 'OTUS DASH'
+
+graph_with_filters = html.Div([
+    dbc.Container([
+        dbc.Row([
+            dbc.Col(dbc.Card([
+                dbc.CardHeader(html.H6("Канал продаж")),
+                dbc.CardBody(html.Div(sales_channel))])),
+            dbc.Col(dbc.Card([
+                dbc.CardHeader([html.H6("Процент рентабельности")]),
+                dbc.CardBody(html.Div(rentable_slider))])),
+            dbc.Col(dbc.Card([
+                dbc.CardHeader(html.H6("Временной период")),
+                dbc.CardBody(html.Div(date_range))]))
+        ]),
+        dbc.Row([
+            dbc.Col(accept_button),
+            dbc.Col()
+        ])
+    ]),
+    dbc.Row([
+        dbc.Col([
+            html.H4('Продажи'),
+            dbc.Row(dcc.Graph(id='product_bar'))
+        ]),
+        dbc.Col([
+            html.H4("Количество продаж с рентабельностью"),
+            dbc.Row(dcc.Graph(id='histogram'))
+        ])
+    ]),
+    dbc.Row([
+        html.H4("Динамика продаж по месяцам"),
+        dcc.Graph(id='line_order')
+    ]),
+    dbc.Container([
+        dbc.Row([
+            dbc.Card([
+                dbc.CardHeader(dbc.Row(html.H6('Выберите округ'))),
+                dbc.CardBody(dbc.Row(html.Div(district_dropdown)))
+            ]),
+            dbc.Row(html.Div(id='change_graph'))
+        ])
+    ])
+
+
+])
+
+graph_without_filters = html.Div([
+    dbc.Row(
+        html.Div([
+            html.H4('Иерархия продаж по округам, районам и категориям товаров'),
+            dcc.Graph(figure=print_treemap_sales_district_subdistric(df))
+        ])
+    )
+])
+
+maps = html.Div()
+
+
 app.layout = dbc.Container(
     html.Div([
     #     HEADER
@@ -107,18 +167,18 @@ app.layout = dbc.Container(
             ]),
 
 
-            html.Div(sales_channel),
-            html.Div(rentable_slider),
-            html.Div(date_range),
-            html.Div(accept_button),
+            # html.Div(sales_channel),
+            # html.Div(rentable_slider),
+            # html.Div(date_range),
+            # html.Div(accept_button),
 
-            dcc.Graph(id='product_bar'),
-            dcc.Graph(id='histogram'),
+            # dcc.Graph(id='product_bar'),
+            # dcc.Graph(id='histogram'),
 
-            html.Div(district_dropdown),
-            dbc.Row(html.Div(id='change_graph')),
+            # html.Div(district_dropdown),
+            # dbc.Row(html.Div(id='change_graph')),
 
-            dcc.Graph(id='line_order'),
+            # dcc.Graph(id='line_order'),
 
             html.Div(district_school_dropdown),
             html.Div(id='school_api_dropdown'),
@@ -146,9 +206,9 @@ app.layout = dbc.Container(
 )
 def tab_content(active_tab):
     if active_tab == 'graph_with_filters':
-        return 'graph_with_filters'
+        return graph_with_filters
     if active_tab == 'graph_without_filters':
-        return 'graph_without_filters'
+        return graph_without_filters
     if active_tab == 'maps':
         return 'maps'
 
