@@ -141,6 +141,18 @@ app.layout = dbc.Container(
 # CALLBACK'S (ФУНКЦИИ ОБРАТНОГО ВЫЗОВА)
 
 @app.callback(
+    Output(component_id='card-content',component_property='children'),
+    Input(component_id='card-tabs',component_property='active_tab')
+)
+def tab_content(active_tab):
+    if active_tab == 'graph_with_filters':
+        return 'graph_with_filters'
+    if active_tab == 'graph_without_filters':
+        return 'graph_without_filters'
+    if active_tab == 'maps':
+        return 'maps'
+
+@app.callback(
     Output(component_id='product_bar',component_property='figure'),
     Input(component_id='accept_button',component_property='n_clicks'),
     State(component_id='sales_channel',component_property='value'),
