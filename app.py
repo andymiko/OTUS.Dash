@@ -1,9 +1,8 @@
 # ИМПОРТЫ
 
 import pandas as pd
-from dash import Dash, html, dcc, Input, Output, State, ctx
+from dash import Dash, html, dcc, Input, Output, State, ctx, dash_table
 import dash_bootstrap_components as dbc
-import geopandas as gpd
 from graphfunc import print_bar_by_sales, print_histo_rentable, print_bar_by_district_subdistrict, print_line_dynamic, \
     print_treemap_sales_district_subdistric, print_box_price_for_one, print_pie_category, print_moscow_map, \
     print_from_api_pic
@@ -33,6 +32,9 @@ sales_options = [{'value':col,'label':col} for col in df['Channel'].unique().tol
 
 # Округа
 district_options = [{'value':col,'label':col} for col in df['District'].unique().tolist()]
+
+# Динамические колонки таблицы
+columns_options = [{'value':col,'label':col} for col in df.columns]
 
 # ЭЛЕМЕНТЫ
 
@@ -80,6 +82,15 @@ district_school_dropdown = dcc.Dropdown(
     clearable=True,
     placeholder='Выберите округ',
     multi=False
+)
+
+columns_channel = dcc.Dropdown(
+    id='columns_channel',
+    options=columns_options,
+    value=[],
+    clearable=False,
+    placeholder='Выберите колонки',
+    multi=True
 )
 
 # ВЁРСТКА
@@ -176,6 +187,13 @@ maps = html.Div([
     )
 ])
 
+table = html.Div([
+    dbc.Row([
+            columns_channel,
+            html.Div(id='table_with_filters')
+        ])
+])
+
 
 app.layout = dbc.Container(
     html.Div([
@@ -196,6 +214,7 @@ app.layout = dbc.Container(
                         dbc.Tab(label='Графика с фильтрами', tab_id='graph_with_filters'),
                         dbc.Tab(label='Графика без фильтров', tab_id='graph_without_filters'),
                         dbc.Tab(label='Картографическая информация', tab_id='maps'),
+                        dbc.Tab(label='Таблица', tab_id='table'),
                     ],
                         id='card-tabs',
                         active_tab='graph_with_filters')),
@@ -226,6 +245,8 @@ def tab_content(active_tab):
         return graph_without_filters
     if active_tab == 'maps':
         return maps
+    if active_tab == 'table':
+        return table
 
 @app.callback(
     Output(component_id='product_bar',component_property='figure'),
@@ -342,6 +363,24 @@ def print_api_picture(value):
         html.H4(f"Школа: {ctx.triggered[0]['value']}"),
         print_from_api_pic(f_data)
     ])
+
+@app.callback(
+    Output(component_id='table_with_filters',component_property='children'),
+    Input(component_id='columns_channel',component_property='value')
+)
+def table_constructor(value):
+
+    if (len(value) == 0):
+        return ''
+    if value is None:
+        return ''
+
+    f_data = df.copy(deep=True)
+    f_data = f_data[value]
+
+    element = dash_table.DataTable(f_data.to_dict('records'), [{'name':i,'id':i} for i in f_data.columns])
+
+    return element
 
 # ЗАПУСК ПРИЛОЖЕНИЯ
 
