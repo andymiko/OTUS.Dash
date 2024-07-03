@@ -94,6 +94,19 @@ app.layout = dbc.Container(
         ),
     # BODY
         html.Div([
+            dbc.Card([
+                dbc.CardHeader(
+                    dbc.Tabs([
+                        dbc.Tab(label='Графика с фильтрами', tab_id='graph_with_filters'),
+                        dbc.Tab(label='Графика без фильтров', tab_id='graph_without_filters'),
+                        dbc.Tab(label='Картографическая информация', tab_id='maps'),
+                    ],
+                        id='card-tabs',
+                        active_tab='graph_with_filters')),
+                dbc.CardBody(html.Div(id='card-content'))
+            ]),
+
+
             html.Div(sales_channel),
             html.Div(rentable_slider),
             html.Div(date_range),
