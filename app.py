@@ -378,7 +378,10 @@ def table_constructor(value):
     f_data = df.copy(deep=True)
     f_data = f_data[value]
 
-    element = dash_table.DataTable(f_data.to_dict('records'), [{'name':i,'id':i} for i in f_data.columns])
+    element = dash_table.DataTable(
+        data=f_data.to_dict('records'),
+        columns=[{'name':i,'id':i} for i in f_data.columns],
+        page_size=25)
 
     return element
 
