@@ -5,7 +5,8 @@ from dash import Dash, html, dcc, Input, Output, State, ctx
 import dash_bootstrap_components as dbc
 import geopandas as gpd
 from graphfunc import print_bar_by_sales, print_histo_rentable, print_bar_by_district_subdistrict, print_line_dynamic, \
-    print_treemap_sales_district_subdistric, print_box_price_for_one, print_pie_category
+    print_treemap_sales_district_subdistric, print_box_price_for_one, print_pie_category, print_moscow_map, \
+    print_from_api_pic
 
 # ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ И ЗАГРУЗКА ДАННЫХ
 app = Dash(__name__,
@@ -155,8 +156,24 @@ graph_without_filters = html.Div([
 ])
 
 maps = html.Div([
-    html.Div(district_school_dropdown),
-    html.Div(id='school_api_dropdown'),
+    dbc.Row(
+        html.Div([
+            html.H4('Распределение заказов школ на карте'),
+            dcc.Graph(figure=print_moscow_map(df))
+        ])
+    ),
+    dbc.Container(
+        dbc.Row([
+            dbc.Card([
+                dbc.CardHeader(html.H6("Отображение школ на карте в зависимости от округа")),
+                dbc.CardBody([
+                    dbc.Row(html.Div(district_school_dropdown)),
+                    dbc.Row(html.Div(id='school_api_dropdown')),
+                ]),
+            ]),
+            dbc.Row(html.Div(id='school_api_pic'))
+        ])
+    )
 ])
 
 
@@ -307,6 +324,24 @@ def print_api_dropdown(value):
         return ''
 
     return school_dropdown
+
+@app.callback(
+    Output(component_id='school_api_pic',component_property='children'),
+    Input(component_id='school_dropdown',component_property='value'),
+    prevent_initial_call=True
+)
+def print_api_picture(value):
+    if (ctx.triggered[0]['value'] is None):
+        return ''
+    if (len(ctx.triggered[0]['value']) == 0):
+        return ''
+    f_data = df.copy(deep=True)
+    f_data = f_data[f_data['SchoolCustomer'].isin([ctx.triggered[0]['value']])].reset_index(drop=True)
+
+    return html.Div([
+        html.H4(f"Школа: {ctx.triggered[0]['value']}"),
+        print_from_api_pic(f_data)
+    ])
 
 # ЗАПУСК ПРИЛОЖЕНИЯ
 
