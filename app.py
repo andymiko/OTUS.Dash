@@ -135,10 +135,29 @@ graph_without_filters = html.Div([
             html.H4('Иерархия продаж по округам, районам и категориям товаров'),
             dcc.Graph(figure=print_treemap_sales_district_subdistric(df))
         ])
-    )
+    ),
+    dbc.Container([
+        dbc.Row([
+            dbc.Col(
+                html.Div([
+                    html.H4('Распределение цен за единицу товара по округам'),
+                    dcc.Graph(figure=print_box_price_for_one(df))
+                ])
+            ),
+            dbc.Col(
+                html.Div([
+                    html.H4('Доля продаж по категориям товаров'),
+                    dcc.Graph(figure=print_pie_category(df))
+                ])
+            )
+        ])
+    ])
 ])
 
-maps = html.Div()
+maps = html.Div([
+    html.Div(district_school_dropdown),
+    html.Div(id='school_api_dropdown'),
+])
 
 
 app.layout = dbc.Container(
@@ -165,27 +184,6 @@ app.layout = dbc.Container(
                         active_tab='graph_with_filters')),
                 dbc.CardBody(html.Div(id='card-content'))
             ]),
-
-
-            # html.Div(sales_channel),
-            # html.Div(rentable_slider),
-            # html.Div(date_range),
-            # html.Div(accept_button),
-
-            # dcc.Graph(id='product_bar'),
-            # dcc.Graph(id='histogram'),
-
-            # html.Div(district_dropdown),
-            # dbc.Row(html.Div(id='change_graph')),
-
-            # dcc.Graph(id='line_order'),
-
-            html.Div(district_school_dropdown),
-            html.Div(id='school_api_dropdown'),
-
-            dcc.Graph(figure=print_treemap_sales_district_subdistric(df)),
-            dcc.Graph(figure=print_box_price_for_one(df)),
-            dcc.Graph(figure=print_pie_category(df))
         ]),
     # FOOTER
         html.Div(
@@ -210,7 +208,7 @@ def tab_content(active_tab):
     if active_tab == 'graph_without_filters':
         return graph_without_filters
     if active_tab == 'maps':
-        return 'maps'
+        return maps
 
 @app.callback(
     Output(component_id='product_bar',component_property='figure'),
