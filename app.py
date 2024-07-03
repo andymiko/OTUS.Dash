@@ -166,11 +166,22 @@ graph_without_filters = html.Div([
     ])
 ])
 
+config_1 = {
+        "modeBarButtonsToAdd": [
+            "drawline",
+            "drawopenpath",
+            "drawclosedpath",
+            "drawcircle",
+            "drawrect",
+            "eraseshape",
+        ]
+    }
+
 maps = html.Div([
     dbc.Row(
         html.Div([
             html.H4('Распределение заказов школ на карте'),
-            dcc.Graph(figure=print_moscow_map(df))
+            dcc.Graph(figure=print_moscow_map(df),config=config_1)
         ])
     ),
     dbc.Container(
