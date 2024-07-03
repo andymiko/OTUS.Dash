@@ -4,7 +4,8 @@ import pandas as pd
 from dash import Dash, html, dcc, Input, Output, State, ctx
 import dash_bootstrap_components as dbc
 import geopandas as gpd
-from graphfunc import print_bar_by_sales, print_histo_rentable, print_bar_by_district_subdistrict
+from graphfunc import print_bar_by_sales, print_histo_rentable, print_bar_by_district_subdistrict, print_line_dynamic, \
+    print_treemap_sales_district_subdistric, print_box_price_for_one, print_pie_category
 
 # ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ И ЗАГРУЗКА ДАННЫХ
 app = Dash(__name__, external_stylesheets=[
@@ -69,6 +70,15 @@ district_dropdown = dcc.Dropdown(
     multi=False
 )
 
+district_school_dropdown = dcc.Dropdown(
+    id='district_dropdown_for_api',
+    options=district_options,
+    value=[],
+    clearable=True,
+    placeholder='Выберите округ',
+    multi=False
+)
+
 # ВЁРСТКА
 app.title = 'OTUS DASH'
 app.layout = dbc.Container(
@@ -94,6 +104,15 @@ app.layout = dbc.Container(
 
             html.Div(district_dropdown),
             dbc.Row(html.Div(id='change_graph')),
+
+            dcc.Graph(id='line_order'),
+
+            html.Div(district_school_dropdown),
+            html.Div(id='school_api_dropdown'),
+
+            dcc.Graph(figure=print_treemap_sales_district_subdistric(df)),
+            dcc.Graph(figure=print_box_price_for_one(df)),
+            dcc.Graph(figure=print_pie_category(df))
         ]),
     # FOOTER
         html.Div(
@@ -158,6 +177,53 @@ def sales_bar_by_district(value):
         return html.Div([
             html.H4('Сумма продаж по районам'),
             dcc.Graph(figure=print_bar_by_district_subdistrict(f_data, type_layout='subdistrict'))])
+
+@app.callback(
+    Output(component_id='line_order',component_property='figure'),
+    Input(component_id='sales_channel',component_property='value'),
+    Input(component_id='data_filter',component_property='start_date'),
+    Input(component_id='data_filter',component_property='end_date')
+)
+def sales_dynamic_my_month(value_sales_channel,start_date, end_date):
+
+    if bool(value_sales_channel):
+        f_data = df.copy(deep=True)
+        f_data = f_data[f_data['Channel'].isin(value_sales_channel)]
+    else:
+        f_data = df.copy(deep=True)
+
+    f_data = f_data[(f_data['OrderDate'] >= start_date) & (f_data['OrderDate'] <= end_date)]
+
+    f_data['OrderDate_month'] = f_data['OrderDate'].dt.to_period('M')
+    f_data['OrderDate_month'] = f_data['OrderDate_month'].astype(str)
+    data_grouped = f_data.groupby('OrderDate_month')['Line Total'].sum().reset_index()
+
+    return print_line_dynamic(data_grouped)
+
+@app.callback(
+    Output(component_id='school_api_dropdown',component_property='children'),
+    Input(component_id='district_dropdown_for_api',component_property='value')
+)
+def print_api_dropdown(value):
+    f_data = df.copy(deep=True)
+
+    f_data = f_data[f_data['District'].isin([value])]
+
+    school_option = [{'value':col,'label':col} for col in f_data['SchoolCustomer'].unique().tolist()]
+
+    school_dropdown = dcc.Dropdown(
+        id='school_dropdown',
+        options=school_option,
+        value=[],
+        clearable=True,
+        placeholder='Выберите школу',
+        multi=False
+    )
+
+    if ctx.triggered[0]['value'] is None:
+        return ''
+
+    return school_dropdown
 
 # ЗАПУСК ПРИЛОЖЕНИЯ
 
