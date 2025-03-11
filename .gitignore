@@ -1,3 +1,7 @@
 .idea
 .otusdash
 nginx.conf
+
+data_for_otus.csv
+__pycache__
+.DS_Store
