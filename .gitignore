@@ -4,4 +4,8 @@ nginx.conf
 
 data_for_otus.csv
 __pycache__
+/__pycache__/*
+/__pycache__/
 .DS_Store
+
+*.pyc
