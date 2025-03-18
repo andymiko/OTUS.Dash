@@ -5,23 +5,29 @@ from dash import Dash, html, dcc, Input, Output, State
 import dash_bootstrap_components as dbc
 import geopandas as gpd
 from graphfunc import print_bar_by_sales, print_histo_rentable
+from db_api.base import Database
+import asyncio
 
 # ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ И ЗАГРУЗКА ДАННЫХ
 app = Dash(__name__)
 
-df = pd.read_csv('data_for_otus.csv')
+db = Database()
+asyncio.run(db.create_tables())
 
 # Дата начало-конец периода
-df['OrderDate'] = pd.to_datetime(df['OrderDate'])
-min_date = df['OrderDate'].min()
-max_date = df['OrderDate'].max()
+
+min_date = asyncio.run(db.get_data_for_filters(type='minmax',param='orderdate'))[0]
+# min_date = pd.to_datetime(min_date)
+
+max_date = asyncio.run(db.get_data_for_filters(type='minmax',param='orderdate'))[1]
+# max_date = pd.to_datetime(max_date)
 
 # Начало-конец слайдера
-rent_max = df['rentabel'].max()
-rent_min = df['rentabel'].min()
+rent_max = float(asyncio.run(db.get_data_for_filters(type='minmax',param='rentabel'))[1])
+rent_min = float(asyncio.run(db.get_data_for_filters(type='minmax',param='rentabel'))[0])
 
 # Канал продаж
-sales_options = [{'value':col,'label':col} for col in df['Channel'].unique().tolist()]
+sales_options = asyncio.run(db.get_data_for_filters(type='option',param='channel'))
 
 # ЭЛЕМЕНТЫ
 
@@ -38,7 +44,7 @@ rentable_slider = dcc.RangeSlider(
     id='rent_slider',
     min=rent_min,
     max=rent_max,
-    value=[rent_min,rent_max],
+    value=[rent_min, rent_max],
     dots=False,
     tooltip={"placement": "bottom", "always_visible": True}
 )
@@ -77,31 +83,40 @@ app.layout = html.Div([
 )
 def sales_channel_filter(n_clicks, value_sales_channel, start_date, end_date, range_value):
 
+    channel = None
+    rentabel_range = range_value
+    orderdate_range = (start_date, end_date)
+
     if bool(value_sales_channel):
-        f_data = df.copy(deep=True)
-        f_data = f_data[f_data['Channel'].isin(value_sales_channel)]
-    else:
-        f_data = df.copy(deep=True)
+        channel = value_sales_channel
 
-    f_data = f_data[(f_data['rentabel'] >= range_value[0]) & (f_data['rentabel'] <= range_value[-1])]
+    records = asyncio.run(db.get_data(
+        orderdate_range=orderdate_range,
+        rentabel_range=rentabel_range,
+        channel=channel
+    ))
 
-    start_date = pd.to_datetime(start_date)
-    end_date = pd.to_datetime(end_date)
+    df = pd.DataFrame([record.to_dict() for record in records])
 
-    f_data = f_data[(f_data['OrderDate'] >= start_date) & (f_data['OrderDate'] <= end_date)]
-
-    return print_bar_by_sales(f_data)
+    return print_bar_by_sales(df)
 
 @app.callback(
     Output(component_id='histogram',component_property='figure'),
     Input(component_id='rent_slider',component_property='value')
 )
 def one_filter_renta(range_value):
-    f_data = df.copy(deep=True)
-    f_data = f_data[(f_data['rentabel'] >= range_value[0]) & (f_data['rentabel'] <= range_value[-1])]
-    return print_histo_rentable(f_data)
+
+    rentabel_range = range_value
+
+    records = asyncio.run(db.get_data(
+        rentabel_range=rentabel_range))
+
+    df = pd.DataFrame([record.to_dict() for record in records])
+
+    return print_histo_rentable(df)
 
 # ЗАПУСК ПРИЛОЖЕНИЯ
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
